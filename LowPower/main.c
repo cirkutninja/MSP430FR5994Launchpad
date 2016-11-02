@@ -6,8 +6,8 @@ void initGPIO(void);
 void initClocks(void);
 
 
-#define greenLED 		GPIO_PIN0
-#define redLED			GPIO_PIN1
+#define greenLED 		GPIO_PIN1
+#define redLED			GPIO_PIN0
 #define LEDPort			GPIO_PORT_P1
 #define pushButton1		GPIO_PIN5
 #define	pushButton2		GPIO_PIN6
@@ -26,10 +26,10 @@ uint32_t myMCLK = 0;
 int main(void)
 {
 	WDT_A_initIntervalTimer(WDT_A_BASE,
-			WDT_A_CLOCKSOURCE_ACLK,
-			WDT_A_CLOCKDIVIDER_512K);
-    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer to allow
-    							//allow everything to intialize
+			WDT_A_CLOCKSOURCE_XCLK,
+			WDT_A_CLOCKDIVIDER_32K);
+
+	WDT_A_hold(WDT_A_BASE);
 
 	SFR_clearInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
 	SFR_enableInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
@@ -40,13 +40,12 @@ int main(void)
 
     WDT_A_start(WDT_A_BASE);
     _enable_interrupts();
-    //PMM_turnOffRegulator();
-    //PMM_disableSVSH();
+    PMM_turnOffRegulator();
+    PMM_disableSVSH();
 
     while(1)
     {
-    	_low_power_mode_3(); //Enter Low Power Mode
-    	_nop();
+    	_low_power_mode_4(); //Enter Low Power Mode
     }
 
 }
@@ -67,35 +66,42 @@ void initClocks(void)
 	myMCLK = CS_getMCLK();
 //#endif
 
+	CS_turnOnLFXT(CS_LFXT_DRIVE_0);
+
 	//set FRAM controller waitstates to 1 when MCLK>8MHz (per datasheet)
 	//Refer to the "Non-volatile memory" chapter for more details
 	//FRAMCtl_configureWaitStateControl(FRAMCTL_ACCESS_TIME_CYCLES_1);
 
 	//Set DCO to run at 8 MHz
-	CS_setDCOFreq(CS_DCORSEL_1, CS_DCOFSEL_3);
+	//CS_setDCOFreq(CS_DCORSEL_1, CS_DCOFSEL_3);
 
 	//Configure Clocks
 	//Set ACLK to us VLO as its oscillator source (~10kHz)
 	CS_initClockSignal(
 			CS_ACLK,				//Clock we're configuring
-			CS_VLOCLK_SELECT,		//Clock source
-			CS_CLOCK_DIVIDER_1		//clock divider
-			);
-	//Set SMCLK to use DCO as its source
-	CS_initClockSignal(
-			CS_SMCLK,				//Clock we're configuring
-			CS_DCOCLK_SELECT,		//Clock source
+			CS_LFXTCLK_SELECT,		//Clock source
 			CS_CLOCK_DIVIDER_1		//clock divider
 			);
 
-	//Set the MCLK to use the VLO clock
-	/*
+
+	//Set SMCLK to use DCO as its source
 	CS_initClockSignal(
-				CS_ACLK,				//Clock we're configuring
-				CS_VLOCLK_SELECT,		//Clock source
+			CS_SMCLK,				//Clock we're configuring
+			CS_LFXTCLK_SELECT,		//Clock source
+			CS_CLOCK_DIVIDER_1		//clock divider
+			);
+
+	CS_turnOffSMCLK();
+
+	//Set the MCLK to use the VLO clock
+	CS_initClockSignal(
+				CS_MCLK,				//Clock we're configuring
+				CS_LFXTCLK_SELECT,		//Clock source
 				CS_CLOCK_DIVIDER_1		//clock divider
 				);
-				*/
+
+
+
 //#ifdef __DEBUG
 	//verify the modified clock settings are as expected
 	myACLK = CS_getACLK();
@@ -108,41 +114,39 @@ void initClocks(void)
 void initGPIO(void)
 {
 
-	P1DIR = 0xFF;
-	P1OUT = 0x00;
+#define GPIO_ALL        GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|  \
+                        GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7
 
-	P2DIR = 0xFF;
-	P2OUT = 0x00;
+	//set unused pins
+	GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P6, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_P8, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_PA, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_PB, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_PC, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_PD, GPIO_ALL);
+	GPIO_setOutputLowOnPin(GPIO_PORT_PJ, GPIO_ALL);
 
-	P3DIR = 0xFF;
-	P3OUT = 0x00;
-
-	P4DIR = 0xFF;
-	P4OUT = 0x00;
-
-	P5DIR = 0xFF;
-	P5OUT = 0x00;
-
-	P6DIR = 0xFF;
-	P6OUT = 0x00;
-
-	P7DIR = 0xFF;
-	P7OUT = 0x00;
-
-	P8DIR = 0xFF;
-	P8OUT = 0x00;
-
-	PADIR = 0xFF;
-	PAOUT = 0x00;
-
-	PBDIR = 0xFF;
-	PBOUT = 0x00;
-
-	PCDIR = 0xFF;
-	PCOUT = 0x00;
-
-	PDDIR = 0xFF;
-	PDOUT = 0x00;
+	/*
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P1, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P2, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P3, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P4, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P5, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P6, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P7, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P8, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PA, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PB, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PC, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PD, GPIO_ALL);
+	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PJ, GPIO_ALL);
+*/
 
 	//set LED pin direction to output and turn off
 	GPIO_setAsOutputPin(LEDPort,
@@ -171,15 +175,13 @@ void initGPIO(void)
 	//Clear the interrupt flags for the push button pins
 	GPIO_clearInterrupt(
 			GPIO_PORT_P5,
-			pushButton1 +
-			pushButton2);
+			GPIO_ALL);
 
 	//Enable the interrupt bits for the push button pins
 	GPIO_enableInterrupt(
 			GPIO_PORT_P5,
 			pushButton1 +
 			pushButton2);
-
 
 
 	//Configure external crystal pins
@@ -212,11 +214,53 @@ void initGPIO(void)
 #pragma vector=PORT5_VECTOR
 __interrupt void pushbutton_ISR(void)
 {
+	uint8_t i=0;
+	uint32_t g=0;
+	uint8_t buttonStatus = 0;
 
-	if(P5IV_P5IFG5)
+	buttonStatus = GPIO_getInterruptStatus(GPIO_PORT_P5,pushButton2);
+	if(buttonStatus)
 	{
+		for(i=12;i>0;i--)
+		{
 			GPIO_toggleOutputOnPin(LEDPort,redLED);
+			for(g=1000;g>0;g--)
+			{
+				_nop();
+			}
+		}
+		GPIO_setOutputLowOnPin(LEDPort,redLED);
+		GPIO_clearInterrupt(
+						GPIO_PORT_P5,
+						pushButton2
+						);
 	}
+	else
+	{
+		GPIO_setOutputLowOnPin(LEDPort,redLED);
+	}
+
+	buttonStatus = GPIO_getInterruptStatus(GPIO_PORT_P5,pushButton1);
+	if(buttonStatus)
+	{
+		for(i=12;i>0;i--)
+		{
+			GPIO_toggleOutputOnPin(LEDPort,greenLED);
+			for(g=1000;g>0;g--)
+			{
+				_nop();
+			}
+		}
+		GPIO_setOutputLowOnPin(LEDPort,redLED);
+		GPIO_clearInterrupt(
+						GPIO_PORT_P5,
+						pushButton1
+						);
+	}
+	else
+		GPIO_setOutputLowOnPin(LEDPort,greenLED);
+
+
 
 }
 
