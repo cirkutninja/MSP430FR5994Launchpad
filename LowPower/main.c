@@ -40,7 +40,7 @@ int main(void)
 
     WDT_A_start(WDT_A_BASE);
     _enable_interrupts();
-    PMM_turnOffRegulator();
+    //PMM_turnOffRegulator();
     PMM_disableSVSH();
 
     while(1)
@@ -118,6 +118,7 @@ void initGPIO(void)
                         GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7
 
 	//set unused pins
+	/*
 	GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_ALL);
@@ -131,8 +132,9 @@ void initGPIO(void)
 	GPIO_setOutputLowOnPin(GPIO_PORT_PC, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_PD, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_PJ, GPIO_ALL);
+	*/
 
-	/*
+
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P1, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P2, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P3, GPIO_ALL);
@@ -146,7 +148,7 @@ void initGPIO(void)
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PC, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PD, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PJ, GPIO_ALL);
-*/
+
 
 	//set LED pin direction to output and turn off
 	GPIO_setAsOutputPin(LEDPort,
