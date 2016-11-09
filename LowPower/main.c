@@ -25,22 +25,24 @@ uint32_t myMCLK = 0;
  */
 int main(void)
 {
-	WDT_A_initIntervalTimer(WDT_A_BASE,
-			WDT_A_CLOCKSOURCE_XCLK,
-			WDT_A_CLOCKDIVIDER_32K);
+	//WDT_A_initIntervalTimer(WDT_A_BASE,
+			//WDT_A_CLOCKSOURCE_XCLK,
+			//WDT_A_CLOCKDIVIDER_32K);
 
 	WDT_A_hold(WDT_A_BASE);
 
-	SFR_clearInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
-	SFR_enableInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
+	//SFR_clearInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
+	//SFR_enableInterrupt(SFR_WATCHDOG_INTERVAL_TIMER_INTERRUPT);
 
 	//Initialization routines
     initGPIO();
     initClocks();
 
-    WDT_A_start(WDT_A_BASE);
-    _enable_interrupts();
-    //PMM_turnOffRegulator();
+    RTC_C_holdClock(RTC_C_BASE);
+
+   // WDT_A_start(WDT_A_BASE);
+    //_enable_interrupts();
+    PMM_turnOffRegulator(); //controls LPM.5 mode
     PMM_disableSVSH();
 
     while(1)
@@ -61,12 +63,12 @@ void initClocks(void)
 
 //#ifdef __DEBUG
 	//verify if the default clock settings are as expected
-	myACLK = CS_getACLK();
-	mySMCLK = CS_getSMCLK();
-	myMCLK = CS_getMCLK();
+	//myACLK = CS_getACLK();
+	//mySMCLK = CS_getSMCLK();
+	//myMCLK = CS_getMCLK();
 //#endif
 
-	CS_turnOnLFXT(CS_LFXT_DRIVE_0);
+	//CS_turnOnLFXT(CS_LFXT_DRIVE_0);
 
 	//set FRAM controller waitstates to 1 when MCLK>8MHz (per datasheet)
 	//Refer to the "Non-volatile memory" chapter for more details
@@ -79,24 +81,24 @@ void initClocks(void)
 	//Set ACLK to us VLO as its oscillator source (~10kHz)
 	CS_initClockSignal(
 			CS_ACLK,				//Clock we're configuring
-			CS_LFXTCLK_SELECT,		//Clock source
+			CS_VLOCLK_SELECT,		//Clock source
 			CS_CLOCK_DIVIDER_1		//clock divider
 			);
 
 
 	//Set SMCLK to use DCO as its source
-	CS_initClockSignal(
-			CS_SMCLK,				//Clock we're configuring
-			CS_LFXTCLK_SELECT,		//Clock source
-			CS_CLOCK_DIVIDER_1		//clock divider
-			);
+	//CS_initClockSignal(
+			//CS_SMCLK,				//Clock we're configuring
+			//CS_LFXTCLK_SELECT,		//Clock source
+			//CS_CLOCK_DIVIDER_1		//clock divider
+			//);
 
 	CS_turnOffSMCLK();
 
 	//Set the MCLK to use the VLO clock
 	CS_initClockSignal(
 				CS_MCLK,				//Clock we're configuring
-				CS_LFXTCLK_SELECT,		//Clock source
+				CS_VLOCLK_SELECT,		//Clock source
 				CS_CLOCK_DIVIDER_1		//clock divider
 				);
 
@@ -104,9 +106,9 @@ void initClocks(void)
 
 //#ifdef __DEBUG
 	//verify the modified clock settings are as expected
-	myACLK = CS_getACLK();
-	mySMCLK = CS_getSMCLK();
-	myMCLK = CS_getMCLK();
+	//myACLK = CS_getACLK();
+	//mySMCLK = CS_getSMCLK();
+	//myMCLK = CS_getMCLK();
 //#endif
 
 }
@@ -118,7 +120,7 @@ void initGPIO(void)
                         GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7
 
 	//set unused pins
-	/*
+/*
 	GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_ALL);
@@ -132,8 +134,8 @@ void initGPIO(void)
 	GPIO_setOutputLowOnPin(GPIO_PORT_PC, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_PD, GPIO_ALL);
 	GPIO_setOutputLowOnPin(GPIO_PORT_PJ, GPIO_ALL);
-	*/
-
+	PMM_unlockLPM5();
+*/
 
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P1, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P2, GPIO_ALL);
@@ -148,8 +150,9 @@ void initGPIO(void)
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PC, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PD, GPIO_ALL);
 	GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_PJ, GPIO_ALL);
+		PMM_unlockLPM5();
 
-
+/*
 	//set LED pin direction to output and turn off
 	GPIO_setAsOutputPin(LEDPort,
 				greenLED +
@@ -159,7 +162,7 @@ void initGPIO(void)
 			greenLED +
 			redLED);
 
-	PMM_unlockLPM5();
+
 
 	//Configure our Launchpad Push Buttons
 	//inputs with pull-up resistors
@@ -197,6 +200,7 @@ void initGPIO(void)
 
 
 
+
 //#ifdef __DEBUG
 	//Output MSP clock signal to external pins for debugging purposes
 	GPIO_setAsPeripheralModuleFunctionInputPin(
@@ -209,6 +213,8 @@ void initGPIO(void)
 			GPIO_PIN4,		//SMCLK on P3.4
 			GPIO_SECONDARY_MODULE_FUNCTION);
 //#endif
+ */
+
 
 }
 
